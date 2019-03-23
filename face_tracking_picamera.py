@@ -29,16 +29,18 @@ TARGET_RECT_COLOR = (0, 255, 0)
 
 RECT_THICKNESS = 2
 
-MIN_X_CAMERA_ANGLE = -80  # °
-MAX_X_CAMERA_ANGLE = 80   # °
-MIN_Y_CAMERA_ANGLE = -80  # °
-MAX_Y_CAMERA_ANGLE = 80   # °
+MIN_X_CAMERA_ANGLE = -80
+MAX_X_CAMERA_ANGLE = 80
+MIN_Y_CAMERA_ANGLE = -80
+MAX_Y_CAMERA_ANGLE = 80
 
 SHOW_IMAGE = True   # If no need to show image, change True to False
 WRITE_VIDEO = True  # If no need to write video, change True to False
 
 OUTPUT_VIDEO_FILE = './output.avi'
 VIDEO_FRAMERATE = 10
+
+CORRECTION_FUCTOR = 0.3
 
 
 def get_face_position_with_eye(image):
@@ -77,6 +79,9 @@ def get_largest_image(image_list):
 
 
 def pixcel2angle(x, y):
+    """
+    convert image-pixcel to camera-angle
+    """
     x_angle = (x - STREAMING_WIDTH / 2) / (STREAMING_WIDTH / (MAX_X_CAMERA_ANGLE - MIN_X_CAMERA_ANGLE))
     y_angle = -(y - STREAMING_HEIGHT / 2) / (STREAMING_HEIGHT / (MAX_Y_CAMERA_ANGLE - MIN_Y_CAMERA_ANGLE))
 
@@ -106,21 +111,23 @@ if __name__ == '__main__':
                 frame = camera.frame
                 face_list = get_face_position_with_eye(frame)
 
-                # draw rect of face area
+                # draw rect of all face area
                 for (x, y, w, h) in face_list:
                     cv2.rectangle(frame, (x, y), (x + w, y + h), FACE_RECT_COLOR, RECT_THICKNESS)
 
                 # tracking target face
                 if len(face_list):
+                    # re-draw rect of target face area
                     (x, y, w, h) = get_largest_image(face_list)
                     cv2.rectangle(frame, (x, y), (x + w, y + h), TARGET_RECT_COLOR, RECT_THICKNESS)
 
-                    # center the target
+                    # calculate the amount of camera-movement to center the target
                     delta_x_angle, delta_y_angle = pixcel2angle(x + (w // 2), y + (h // 2))
 
-                    camera_x_angle += delta_x_angle * 0.3  # *** magic number ***
-                    camera_y_angle += delta_y_angle * 0.3  # *** magic number ***
+                    camera_x_angle += delta_x_angle * CORRECTION_FUCTOR
+                    camera_y_angle += delta_y_angle * CORRECTION_FUCTOR
 
+                    # limitation of upper and lower
                     if camera_x_angle < MIN_X_CAMERA_ANGLE:
                         camera_x_angle = MIN_X_CAMERA_ANGLE
                     elif camera_x_angle > MAX_X_CAMERA_ANGLE:
@@ -131,6 +138,7 @@ if __name__ == '__main__':
                     elif camera_y_angle > MAX_Y_CAMERA_ANGLE:
                         camera_y_angle = MAX_Y_CAMERA_ANGLE
 
+                    # change camera position
                     camera_mount.position(camera_x_angle, camera_y_angle)
 
                     print("delta", ("{:.2f}".format(delta_x_angle), "{:.2f}".format(delta_y_angle)))
@@ -158,4 +166,3 @@ if __name__ == '__main__':
 
             if WRITE_VIDEO:
                 video.release()
-
