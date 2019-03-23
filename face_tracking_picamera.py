@@ -4,6 +4,8 @@
 Face Tracking PiCamera
 """
 
+import sys
+sys.path.append('raspberrypi_lib')
 import time
 import cv2
 from raspberrypi_lib.camera_mount import CameraMount
