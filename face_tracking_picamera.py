@@ -8,7 +8,7 @@ import sys
 sys.path.append('raspberrypi_lib')
 import time
 import cv2
-from raspberrypi_lib.camera_mount import CameraMount
+from camera_mount import CameraMount
 
 STREAMING_WIDTH = 480
 STREAMING_HEIGHT = 480
