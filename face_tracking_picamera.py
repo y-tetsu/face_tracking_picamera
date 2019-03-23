@@ -32,6 +32,12 @@ MAX_X_CAMERA_ANGLE = 80   # °
 MIN_Y_CAMERA_ANGLE = -80  # °
 MAX_Y_CAMERA_ANGLE = 80   # °
 
+SHOW_IMAGE = True   # If no need to show image, change True to False
+WRITE_VIDEO = True  # If no need to write video, change True to False
+
+OUTPUT_VIDEO_FILE = './output.avi'
+VIDEO_FRAMERATE = 10
+
 
 def get_face_position_with_eye(image):
     """
@@ -77,9 +83,8 @@ def pixcel2angle(x, y):
 
 if __name__ == '__main__':
     with CameraMount() as camera_mount:
-        camera_x_angle, camera_y_angle = 0, 0
-
         # initial camera position
+        camera_x_angle, camera_y_angle = 0, 0
         camera_mount.position(camera_x_angle, camera_y_angle)
         time.sleep(0.1)
 
@@ -88,8 +93,13 @@ if __name__ == '__main__':
         camera.start_streaming(STREAMING_WIDTH, STREAMING_HEIGHT)
 
         try:
-            cv2.namedWindow(WINDOW_TITLE, cv2.WINDOW_NORMAL)
+            if SHOW_IMAGE:
+                cv2.namedWindow(WINDOW_TITLE, cv2.WINDOW_NORMAL)
         
+            if WRITE_VIDEO:
+                fourcc = cv2.VideoWriter_fourcc(*'XVID')
+                video = cv2.VideoWriter(OUTPUT_VIDEO_FILE, fourcc, VIDEO_FRAMERATE, (STREAMING_WIDTH, STREAMING_HEIGHT))
+
             while True:
                 frame = camera.frame
                 face_list = get_face_position_with_eye(frame)
@@ -126,11 +136,24 @@ if __name__ == '__main__':
                     print()
 
                 # show image
-                cv2.imshow(WINDOW_TITLE, frame)
+                if SHOW_IMAGE:
+                    cv2.imshow(WINDOW_TITLE, frame)
+
+                # write video
+                if WRITE_VIDEO:
+                    video.write(frame)
 
                 # key wait for escape
                 if cv2.waitKey(KEY_WAIT_TIME) & 0xFF == ESC_KEY_NUM:
                     break
+
+        except KeyboardInterrupt:
+            print('quit face tracking')
         
         finally:
-            cv2.destroyAllWindows()
+            if SHOW_IMAGE:
+                cv2.destroyAllWindows()
+
+            if WRITE_VIDEO:
+                video.release()
+
